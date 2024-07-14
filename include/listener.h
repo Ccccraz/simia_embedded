@@ -35,10 +35,10 @@ class Listener
     auto verify_crc() -> bool;
 
   public:
-    QueueHandle_t _data_queue{};
     Listener(int baudRate);
     auto listen() -> void;
     auto trigger() -> void;
+    auto send(byte data[], uint8_t size) -> void;
     ~Listener() = default;
 };
 
@@ -70,9 +70,7 @@ inline auto Listener::verify_crc() -> bool
 
 inline Listener::Listener(int baudRate)
 {
-    USB.begin();
     Serial.begin(baudRate);
-    _data_queue = xQueueCreate(100, sizeof(std::vector<uint8_t>));
 }
 
 inline auto Listener::listen() -> void
@@ -158,6 +156,21 @@ inline auto Listener::trigger() -> void
     {
         EventCenter::instance().trigger(static_cast<CMD>(_data[3]));
     }
+}
+
+inline auto Listener::send(byte data[], uint8_t size) -> void
+{
+    std::vector<uint8_t> buf{Header[0], Header[1], size};
+    buf.insert(buf.end(), data, data + size);
+
+    byte tmp_crc[2]{};
+    auto tmp = calcCRC16(buf.data(), buf.size(), CRC16_XMODEM_POLYNOME, CRC16_XMODEM_INITIAL, CRC16_XMODEM_XOR_OUT,
+                         CRC16_XMODEM_REV_IN, CRC16_XMODEM_REV_OUT);
+    tmp_crc[0] = static_cast<byte>(tmp >> 8);
+    tmp_crc[1] = static_cast<byte>(tmp & 0xFF);
+
+    buf.insert(buf.end(), tmp_crc, tmp_crc + 2);
+    Serial.write(buf.data(), buf.size());
 }
 
 } // namespace simia
