@@ -1,6 +1,6 @@
 {
     "name": "simia_embedded",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "simia embedded is a very sample event driven library for esp32 arduino core",
     "keywords": "simia, psychounity",
     "repository": {
